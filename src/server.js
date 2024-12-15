@@ -14,6 +14,7 @@ import topbetgaming from './controllers/topbatgaming.js';
 import jiligames from './controllers/jilimain.js';
 import path from 'path';
 import  authenticateAndCheckBalance from "./controllers/authenticateAndCheckBalance.js";
+import winGoController from './controllers/winGoController.js';  
 
 
 
@@ -46,30 +47,30 @@ app.use('/topbetgaming', topbetgaming);
 app.use('/jiligames', jiligames);
 
 app.get('/balancec', authenticateAndCheckBalance);
-
+// app.get('/api/game-history', getGameHistory);
 // app.get('/popup', (req, res) => {
 //   res.render('popup.ejs');
 // });
 
 // Use the balance router
-
+// app.get('/api/member/game_history', winGoController.getGameHistory);
 
 const gameHistory = [
   {
-      name: "Win Go",
-      status: "Win",
-      dateTime: "2024-12-10 17:41:08",
-      type: "Win Go 30 second",
-      period: "20241210100051463",
-      orderNumber: "WG2024121017410888752388d",
-      selected: "Red",
-      totalBet: "₹1.00",
-      lotteryResult: "0",
-      actualAmount: "₹0.98",
-      winnings: "₹1.47",
-      handlingFee: "₹0.02",
-      profitLoss: "₹0.47"
-  },
+    "orderNumber": "207149788285241",
+    "period": "20241121022950",
+    "totalBet": "1.00",
+    "lotteryResult": 1,
+    "status": "Lose",
+    "selected": "Red",
+    "actualAmount": 1,
+    "winnings": 0,
+    "handlingFee": 0.02,
+    "profitLoss": "NaN",
+    "dateTime": "2024-12-15 10:12:41 AM",
+    "name": "wingo",
+    "type": "wingo 1 minute"
+},
   {
       name: "Trx Win Go",
       status: "Lose",

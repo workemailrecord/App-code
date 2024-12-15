@@ -50,6 +50,68 @@ const winGoPage10 = async (req, res) => {
   return res.render("bet/wingo/win10.ejs");
 };
 
+const getGameHistory = async (req, res) => {
+  let auth = req.cookies.auth;
+
+  try {
+    const [user] = await connection.query(
+      "SELECT `phone` FROM users WHERE token = ? AND veri = 1 LIMIT 1",
+      [auth]
+    );
+
+    if (!user[0]) {
+      return res.status(401).json({ message: "Authentication failed!" });
+    }
+
+    const phone = user[0].phone;
+
+    const [gameHistory] = await connection.query(
+      `
+      SELECT id_product AS orderNumber, stage AS period, fee, money, amount, result AS lotteryResult, status, time, get
+      FROM minutes_1
+      WHERE phone = ? 
+      ORDER BY time DESC
+      `,
+      [phone]
+    );
+
+    const formattedHistory = gameHistory.map((list_order) => {
+      // Determine winning color and winning amount
+      const isWin = list_order.status === 1;
+      const profit = list_order.get - (list_order.fee + list_order.money); // Calculate profit
+
+      // Ensure fee and result are valid numbers before calculating profitLoss
+      const fee = parseFloat(list_order.fee) || 0;
+      const result = parseFloat(list_order.result) || 0;
+
+      return {
+        // Updated order of properties
+        name: "Win Go", // Adjusted name based on win status
+        status: isWin ? 'Win' : 'Lose',
+        dateTime: timerJoin(list_order.time),
+        type: "Win Go 1 minute", // Adjusted type based on win status
+        period: list_order.period,
+        orderNumber: list_order.orderNumber,
+        selected: isWin ? "Green" : "Red", // Adjusted selected color based on win status
+        totalBet: parseFloat(list_order.fee + list_order.money).toFixed(2),
+        lotteryResult: list_order.lotteryResult,
+        actualAmount: list_order.amount,
+        winning: profit > 0 ? list_order.get : 0, // Show winning only when profit, otherwise show 0
+        handlingFee: fee,
+        profitLoss: profit, // Calculate profitLoss safely
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: formattedHistory,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const isNumber = (params) => {
   let pattern = /^[0-9]*\d$/;
   return pattern.test(params);
@@ -1188,6 +1250,7 @@ const winGoController = {
   winGoPage3,
   winGoPage5,
   winGoPage10,
+  getGameHistory, // Add the new method here
 };
 
 export default winGoController;

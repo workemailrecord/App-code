@@ -2924,8 +2924,9 @@
 <script>
     const fetchGameHistory = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/api/member/game_history'); // Adjust the URL as needed
-            const gameHistory = response.data; // Assuming the response is an array of game history objects
+            const response = await axios.get('/api/member/game_history'); // Adjust the URL as needed
+            const gameHistory = response.data.data; // Access the 'data' property
+            console.log(gameHistory); // Log the game history
             renderGameHistory(gameHistory);
         } catch (error) {
             console.error('Error fetching game history:', error);
@@ -2933,122 +2934,163 @@
     };
 
     const renderGameHistory = (history) => {
-        const container = document.getElementById('game-history-container');
-        container.innerHTML = ''; // Clear existing content
+    const container = document.getElementById('game-history-container');
+    container.innerHTML = ''; // Clear existing content
 
-        history.forEach(game => {
-            const gameDiv = `
-                <div data-v-1d8fbc24="" class="bet-container-lottery-card">
-                    <div data-v-1d8fbc24="" class="bet-container-lottery-card-header ar-1px-b">
-                        <h1 data-v-1d8fbc24="">
-                            <h2 data-v-1d8fbc24="">${game.name}</h2>
-                            <span data-v-1d8fbc24="" class="color40C592">${game.dateTime}</span>
-                        </h1>
-                        <span class="status ${game.status === 'Win' ? '' : 'lose'}">${game.status}</span> <!-- Status added here -->
+    // Check if history is an array
+    if (!Array.isArray(history)) {
+        console.error('Expected history to be an array, but got:', history);
+        return; // Exit the function if history is not an array
+    }
+
+    history.forEach(game => {
+        // Determine size and color based on lotteryResult
+        let sizeDisplay = "";
+        let backgroundColor = "";
+        let resultColorClass = "";
+        let colorName = ""; // To hold the color name for display
+        let backgroundImage = ""; // To hold the gradient background
+        let colorNameStyle = ""; // To hold the style for the color name span
+
+        const lotteryResult = parseInt(game.lotteryResult);
+
+        if (lotteryResult < 5) {
+            sizeDisplay = "Small";
+            backgroundColor = "blue"; // Background color for Small
+        } else {
+            sizeDisplay = "Big";
+            backgroundColor = "orange"; // Background color for Big
+        }
+
+        // Determine the color based on the lottery result
+        if ([1, 3, 7, 9].includes(lotteryResult)) {
+            resultColorClass = "green"; // Green for odd results
+            colorName = "Green"; // Color name for display
+        } else if ([2, 4, 6, 8].includes(lotteryResult)) {
+            resultColorClass = "red"; // Red for even results
+            colorName = "Red"; // Color name for display
+        } else if (lotteryResult === 0 || lotteryResult === 5) {
+            resultColorClass = "violet-green"; // Violet Green for 0 or 5
+            colorName = "Violet Green"; // Color name for display
+            backgroundImage = `
+                background-image: -webkit-linear-gradient(top left, #40ad72 50%, #eb43dd 0);
+                background-image: linear-gradient(to bottom right, #40ad72 50%, #eb43dd 0);
+            `;
+            colorNameStyle = backgroundImage; // Apply gradient to color name span
+        }
+
+        const gameDiv = `
+            <div data-v-1d8fbc24="" class="bet-container-lottery-card">
+                <div data-v-1d8fbc24="" class="bet-container-lottery-card-header ar-1px-b">
+                    <h1 data-v-1d8fbc24="">
+                        <h2 data-v-1d8fbc24="">${game.name || 'Game Name'}</h2>
+                        <span data-v-1d8fbc24="" class="color40C592">${game.dateTime}</span>
+                    </h1>
+                    <span class="status ${game.status === 'Win' ? 'color40C592' : 'colorE98613'}">${game.status}</span>
+                </div>
+                <div data-v-1d8fbc24="" class="bet-container-lottery-card-info">
+                    <ul data-v-1d8fbc24="">
+                        <li data-v-1d8fbc24="">
+                            <span data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                <h2 data-v-1d8fbc24="">Type</h2>
+                            </span>
+                            <span data-v-1d8fbc24="">${game.type || 'N/A'}</span>
+                        </li>
+                        <li data-v-1d8fbc24="">
+                            <span data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                <h2 data-v-1d8fbc24="">Period</h2>
+                            </span>
+                            <span data-v-1d8fbc24="">${game.period}</span>
+                        </li>
+                        <li data-v-1d8fbc24="">
+                            <span data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                <h2 data-v-1d8fbc24="">Order number</h2>
+                            </span>
+                            <span data-v-1d8fbc24="">${game.orderNumber}</span>
+                        </li>
+                        <li data-v-1d8fbc24="">
+                            <span data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                <h2 data-v-1d8fbc24="">Select</h2>
+                            </span>
+                            <p data-v-1d8fbc24="">${game.selected}</p>
+                        </li>
+                        <li data-v-1d8fbc24="">
+                            <span data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                <h2 data-v-1d8fbc24="">Total bet</h2>
+                            </span>
+                            <span data-v-1d8fbc24="">${game.totalBet}</span>
+                        </li>
+                    </ul>
+                </div>
+                <img data-v-1d8fbc24="" src="/assets/png/moonBar-f80ac733.png">
+                <div data-v-1d8fbc24="" class="bet-container-lottery-note">
+                    <div data-v-1d8fbc24="" class="bet-container-lottery-note-result">
+                        <div data-v-1d8fbc24="">
+                            <h1 data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                Lottery results
+                            </h1>
+                            <h2 data-v-1d8fbc24="">
+                                <svg data-v-1d8fbc24="" class="svg-icon icon-round">
+                                    <use xlink:href="#icon-round"></use>
+                                </svg>
+                                <p data-v-1d8fbc24="" class="${resultColorClass}" style="${backgroundImage}">${game.lotteryResult}</p>
+                                <span data-v-1d8fbc24="" class="small" style="background-color: ${backgroundColor};">${sizeDisplay}</span>
+                                <span data-v-1d8fbc24="" class="${resultColorClass}" style="${colorNameStyle}">${colorName}</span>
+                            </h2>
+                        </div>
                     </div>
-                    <div data-v-1d8fbc24="" class="bet-container-lottery-card-info">
-                        <ul data-v-1d8fbc24="">
-                            <li data-v-1d8fbc24="">
-                                <span data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    <h2 data-v-1d8fbc24="">Type</h2>
-                                </span>
-                                <span data-v-1d8fbc24="">${game.type}</span>
-                            </li>
-                            <li data-v-1d8fbc24="">
-                                <span data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    <h2 data-v-1d8fbc24="">Period</h2>
-                                </span>
-                                <span data-v-1d8fbc24="">${game.period}</span>
-                            </li>
-                            <li data-v-1d8fbc24="">
-                                <span data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    <h2 data-v-1d8fbc24="">Order number</h2>
-                                </span>
-                                <span data-v-1d8fbc24="">${game.orderNumber}</span>
-                            </li>
-                            <li data-v-1d8fbc24="">
-                                <span data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    <h2 data-v-1d8fbc24="">Select</h2>
-                                </span>
-                                <p data-v-1d8fbc24="">${game.selected}</p>
-                            </li>
-                            <li data-v-1d8fbc24="">
-                                <span data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    <h2 data-v-1d8fbc24="">Total bet</h2>
-                                </span>
-                                <span data-v-1d8fbc24="">${game.totalBet}</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <img data-v-1d8fbc24="" src="/assets/png/moonBar-f80ac733.png">
-                    <div data-v-1d8fbc24="" class="bet-container-lottery-note">
-                        <div data-v-1d8fbc24="" class="bet-container-lottery-note-result">
-                            <div data-v-1d8fbc24="">
-                                <h1 data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    Lottery results
-                                </h1>
-                                <h2 data-v-1d8fbc24="">
-                                    <svg data-v-1d8fbc24="" class="svg-icon icon-round">
-                                        <use xlink:href="#icon-round"></use>
-                                    </svg>
-                                    <p data-v-1d8fbc24="">${game.lotteryResult}</p>
-                                    <span data-v-1d8fbc24="" class="small">Small</span>
-                                    <span data-v-1d8fbc24="" class="red_violet">Red Violet</span>
-                                </h2>
+                    <div data-v-1d8fbc24="" class="bet-container-lottery-note-box">
+                        <div data-v-1d8fbc24="">
+                            <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
+                                <h3 data-v-1d8fbc24="">${game.actualAmount}</h3>
+                                <span data-v-1d8fbc24="">Actual amount</span>
                             </div>
                         </div>
-                        <div data-v-1d8fbc24="" class="bet-container-lottery-note-box">
-                            <div data-v-1d8fbc24="">
-                                <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
-                                    <h3 data-v-1d8fbc24="">${game.actualAmount}</h3>
-                                    <span data-v-1d8fbc24="">Actual amount</span>
-                                </div>
+                        <div data-v-1d8fbc24="">
+                            <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
+                                <h3 data-v-1d8fbc24="">${game.winning}</h3>
+                                <span data-v-1d8fbc24="">Winnings</span>
                             </div>
-                            <div data-v-1d8fbc24="">
-                                <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
-                                    <h3 data-v-1d8fbc24="">${game.winnings}</h3>
-                                    <span data-v-1d8fbc24="">Winnings</span>
-                                </div>
+                        </div>
+                        <div data-v-1d8fbc24="">
+                            <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
+                                <h3 data-v-1d8fbc24="">${game.handlingFee}</h3>
+                                <span data-v-1d8fbc24="">Handling fee</span>
                             </div>
-                            <div data-v-1d8fbc24="">
-                                <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
-                                    <h3 data-v-1d8fbc24="">${game.handlingFee}</h3>
-                                    <span data-v-1d8fbc24="">Handling fee</span>
-                                </div>
-                            </div>
-                            <div data-v-1d8fbc24="">
-                                <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
-                                    <h4 data-v-1d8fbc24="" class="h4_green">${game.profitLoss}</h4>
-                                    <span data-v-1d8fbc24="">Profit/loss</span>
-                                </div>
+                        </div>
+                        <div data-v-1d8fbc24="">
+                            <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
+                                <h4 data-v-1d8fbc24="" class="h4_green">${game.profitLoss}</h4>
+                                <span data-v-1d8fbc24="">Profit/loss</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            `;
-            container.innerHTML += gameDiv; // Append the new game entry
-        });
-    };
+            </div>
+        `;
+        container.innerHTML += gameDiv; // Append the new game entry
+    });
+};
 
-    // Fetch game history on page load
-    window.onload = fetchGameHistory;
+// Fetch game history on page load
+window.onload = fetchGameHistory;
 </script>
 </html>

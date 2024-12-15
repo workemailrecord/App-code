@@ -546,10 +546,15 @@ const initWebRouter = (app) => {
 
   router.get('/check-wallet', authenticateAndCheckBalance);
  
+
+
+  router.get('/api/member/game_history', winGoController.getGameHistory);
   // router.get("/win", middlewareController, winGoController.winGoPage)
   // router.get("/win/3", middlewareController, winGoController.winGoPage3)
   // router.get("/win/5", middlewareController, winGoController.winGoPage5)
   // router.get("/win/10", middlewareController, winGoController.winGoPage10)
+ 
+  
 
   // BET trx wingo
   router.get(
