@@ -1,0 +1,77 @@
+name: Deploy Website to Server via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install SSHpass (required for password-based SSH)
+      - name: Install SSHpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      # Step 3: SSH into the server and execute the deployment commands
+      - name: Deploy via SSH
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no root@$SERVER_IP << 'EOF'
+            
+            # Setup repository details
+            REPO_NAME=${{ github.repository }}
+            REPO_NAME=${REPO_NAME//\//_} # Replace "/" in repo name
+
+            # Create the project directory if it doesn't exist
+            if [ ! -d "/var/www/$REPO_NAME" ]; then
+              echo "Creating directory /var/www/$REPO_NAME..."
+              mkdir -p /var/www/$REPO_NAME
+              chown $USER:$USER /var/www/$REPO_NAME
+            fi
+
+            # Navigate to the project directory
+            cd /var/www/$REPO_NAME
+
+            # Handle uncommitted changes before pulling the repository
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "Stashing local changes..."
+              git stash --include-untracked
+              git pull origin main
+              echo "Reapplying stashed changes..."
+              git stash pop || echo "No stashed changes to apply."
+            else
+              echo "Pulling latest changes..."
+              git pull origin main
+            fi
+
+            # Install dependencies if package.json exists
+            if [ -f "package.json" ]; then
+              echo "Installing dependencies..."
+              npm install
+            else
+              echo "No package.json found, skipping dependency installation."
+            fi
+
+            # Start or restart the application using PM2
+            if pm2 list | grep -q "$REPO_NAME"; then
+              echo "Restarting PM2 process..."
+              pm2 restart "$REPO_NAME" --update-env
+            else
+              echo "PM2 process not found, starting new process..."
+              pm2 start npm --name "$REPO_NAME" -- start
+            fi
+
+            # Save PM2 configuration to ensure restart on reboot
+            pm2 save || echo "Failed to save PM2 configuration."
+
+          EOF
