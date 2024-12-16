@@ -28,31 +28,44 @@ jobs:
             REPO_NAME=${{ github.repository }}
             REPO_NAME=${REPO_NAME//\//_}
 
+            # Ensure the directory exists
             if [ ! -d "/var/www/$REPO_NAME" ]; then
+              echo "Creating project directory..."
               mkdir -p /var/www/$REPO_NAME
             fi
             cd /var/www/$REPO_NAME
 
+            # Ensure the directory is a Git repository
             if [ ! -d ".git" ]; then
+              echo "Cloning repository..."
               git clone https://github.com/${{ github.repository }} .
             else
+              echo "Pulling latest changes..."
               git pull origin main
             fi
 
+            # Install dependencies if package.json exists
             if [ -f "package.json" ]; then
+              echo "Installing dependencies..."
               npm install
+            else
+              echo "No package.json found, skipping dependency installation."
             fi
 
+            # PM2 Process Management
             if pm2 list | grep -q "$REPO_NAME"; then
+              echo "Restarting PM2 process..."
               pm2 restart "$REPO_NAME" --update-env
             else
+              echo "PM2 process '$REPO_NAME' not found. Starting a new process..."
               pm2 start npm --name "$REPO_NAME" -- start
             fi
 
             if pm2 list | grep -q "$REPO_NAME"; then
+              echo "Saving PM2 process..."
               pm2 save
             else
-              echo "No PM2 process found to save. Skipping save."
+              echo "Failed to find a PM2 process to save."
             fi
 
           EOF
