@@ -10,14 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Install SSHpass (required for password-based SSH)
       - name: Install SSHpass
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
 
+      # Step 3: SSH into the server and execute the deployment commands
       - name: Deploy via SSH
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
@@ -25,17 +28,21 @@ jobs:
         run: |
           sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no root@$SERVER_IP << 'EOF'
             
+            # Setup repository details
             REPO_NAME=${{ github.repository }}
-            REPO_NAME=${REPO_NAME//\//_}
+            REPO_NAME=${REPO_NAME//\//_} # Replace "/" in repo name
 
-            # Ensure the directory exists
+            # Create the project directory if it doesn't exist
             if [ ! -d "/var/www/$REPO_NAME" ]; then
-              echo "Creating project directory..."
+              echo "Creating directory /var/www/$REPO_NAME..."
               mkdir -p /var/www/$REPO_NAME
+              chown $USER:$USER /var/www/$REPO_NAME
             fi
+
+            # Navigate to the project directory
             cd /var/www/$REPO_NAME
 
-            # Ensure the directory is a Git repository
+            # Clone or pull the repository
             if [ ! -d ".git" ]; then
               echo "Cloning repository..."
               git clone https://github.com/${{ github.repository }} .
@@ -52,17 +59,17 @@ jobs:
               echo "No package.json found, skipping dependency installation."
             fi
 
-            # PM2 Process Management
+            # Start or restart the application using PM2
             if pm2 list | grep -q "$REPO_NAME"; then
               echo "Restarting PM2 process..."
               pm2 restart "$REPO_NAME" --update-env
             else
-              echo "PM2 process '$REPO_NAME' not found. Starting a new process..."
-              pm2 start npm --name "$REPO_NAME" -- start
+              echo "PM2 process not found, proceeding to start PM2 step..."
             fi
 
-            # Save PM2 process configuration
-            echo "Saving PM2 process..."
-            pm2 save || pm2 save --force
+            # Start PM2 process
+            echo "Ensuring PM2 process is running..."
+            pm2 start npm --name "$REPO_NAME" -- start || echo "Failed to start PM2 process."
+            pm2 save  # Save PM2 configuration to restart on reboot
 
           EOF
