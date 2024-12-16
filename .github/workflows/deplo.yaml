@@ -61,11 +61,8 @@ jobs:
               pm2 start npm --name "$REPO_NAME" -- start
             fi
 
-            if pm2 list | grep -q "$REPO_NAME"; then
-              echo "Saving PM2 process..."
-              pm2 save
-            else
-              echo "Failed to find a PM2 process to save."
-            fi
+            # Save PM2 process configuration
+            echo "Saving PM2 process..."
+            pm2 save || pm2 save --force
 
           EOF
