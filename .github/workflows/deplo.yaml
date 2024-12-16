@@ -20,7 +20,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      # Step 3: SSH into the server and execute the deployment command
+      # Step 3: SSH into the server and execute the deployment commands
       - name: Deploy via SSH
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
@@ -42,16 +42,21 @@ jobs:
             # Navigate to the project directory
             cd /var/www/$REPO_NAME
 
-            # Handle uncommitted changes before pulling the repository
-            if [ -n "$(git status --porcelain)" ]; then
-              echo "Stashing local changes..."
-              git stash --include-untracked
-              git pull origin main
-              echo "Reapplying stashed changes..."
-              git stash pop || echo "No stashed changes to apply."
+            # Ensure the directory is a Git repository
+            if [ ! -d ".git" ]; then
+              echo "Initializing Git repository..."
+              git clone https://github.com/${{ github.repository }} .
             else
               echo "Pulling latest changes..."
-              git pull origin main
+              if [ -n "$(git status --porcelain)" ]; then
+                echo "Stashing local changes..."
+                git stash --include-untracked
+                git pull origin main
+                echo "Reapplying stashed changes..."
+                git stash pop || echo "No stashed changes to apply."
+              else
+                git pull origin main
+              fi
             fi
 
             # Install dependencies if package.json exists
