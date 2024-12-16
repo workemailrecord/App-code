@@ -25,10 +25,11 @@ jobs:
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+          USER: root
         run: |
-          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no root@$SERVER_IP << 'EOF'
-            
-            # Setup repository details
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $USER@$SERVER_IP << 'EOF'
+
+            # Variables
             REPO_NAME=${{ github.repository }}
             REPO_NAME=${REPO_NAME//\//_} # Replace "/" in repo name
 
@@ -48,13 +49,14 @@ jobs:
               git clone https://github.com/${{ github.repository }} .
             else
               echo "Pulling latest changes..."
+              git reset --hard # Reset any local changes
               git pull origin main
             fi
 
             # Install dependencies if package.json exists
             if [ -f "package.json" ]; then
               echo "Installing dependencies..."
-              npm install
+              npm install --production
             else
               echo "No package.json found, skipping dependency installation."
             fi
@@ -62,14 +64,27 @@ jobs:
             # Start or restart the application using PM2
             if pm2 list | grep -q "$REPO_NAME"; then
               echo "Restarting PM2 process..."
-              pm2 restart "$REPO_NAME" --update-env
+              pm2 restart "$REPO_NAME"
             else
-              echo "PM2 process not found, proceeding to start PM2 step..."
+              echo "Starting PM2 process..."
+              pm2 start npm --name "$REPO_NAME" -- start
+              pm2 save  # Save PM2 configuration to restart on reboot
             fi
 
-            # Start PM2 process
-            echo "Ensuring PM2 process is running..."
-            pm2 start npm --name "$REPO_NAME" -- start || echo "Failed to start PM2 process."
-            pm2 save  # Save PM2 configuration to restart on reboot
+            # Secondary PM2 logic to ensure process runs if no existing configuration found
+            if ! pm2 list | grep -q "$REPO_NAME"; then
+              echo "PM2 process not found, proceeding to start PM2 step..."
+              pm2 start npm --name "$REPO_NAME" -- start || echo "Failed to start PM2 process."
+              pm2 save  # Save PM2 configuration to restart on reboot
+            fi
+
+            # Save PM2 process list to ensure restart on server reboot
+            echo "Saving PM2 process list..."
+            pm2 save
+
+            # Ensure PM2 startup script is enabled
+            pm2 startup systemd -u $USER --hp /home/$USER
+            systemctl enable pm2-$USER
+            systemctl start pm2-$USER
 
           EOF
