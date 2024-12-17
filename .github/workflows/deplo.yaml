@@ -1,0 +1,79 @@
+name: Deploy Website to Server via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install SSHpass (required for password-based SSH)
+      - name: Install SSHpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      # Step 3: SSH into the server and execute the deployment commands
+      - name: Deploy via SSH
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+          USER: root
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $USER@$SERVER_IP << 'EOF'
+
+            # Variables
+            REPO_NAME=${{ github.repository }}
+            REPO_NAME=${REPO_NAME//\//_} # Replace "/" in repo name
+
+            # Create the project directory if it doesn't exist
+            if [ ! -d "/var/www/$REPO_NAME" ]; then
+              echo "Creating directory /var/www/$REPO_NAME..."
+              mkdir -p /var/www/$REPO_NAME
+              chown $USER:$USER /var/www/$REPO_NAME
+            fi
+
+            # Navigate to the project directory
+            cd /var/www/$REPO_NAME
+
+            # Clone or pull the repository
+            if [ ! -d ".git" ]; then
+              echo "Cloning repository..."
+              git clone https://github.com/${{ github.repository }} .
+            else
+              echo "Pulling latest changes..."
+              git pull origin main
+            fi
+
+            # Install dependencies if package.json exists
+            if [ -f "package.json" ]; then
+              echo "Installing dependencies..."
+              npm install --production
+            else
+              echo "No package.json found, skipping dependency installation."
+            fi
+
+            # Start or restart the application using PM2
+            if pm2 list | grep -q "$REPO_NAME"; then
+              echo "Restarting PM2 process..."
+              pm2 restart "$REPO_NAME" || {
+                echo "Failed to restart process. Attempting to start..."
+                pm2 start npm --name "$REPO_NAME" -- start
+              }
+            else
+              echo "PM2 process not found. Starting process..."
+              pm2 start npm --name "$REPO_NAME" -- start
+            fi
+
+            # Save PM2 configuration to ensure restart on reboot
+            echo "Saving PM2 process list..."
+            pm2 save
+
+          EOF
