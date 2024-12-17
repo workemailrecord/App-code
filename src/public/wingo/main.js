@@ -474,7 +474,7 @@ function showMyBetsData(list_orders) {
       }
       //MyGameRecordList__C-item-l-green
       //MyGameRecordList__C-item-l-violet
-
+      
       return `
       <div data-v-2faec5cb="" class="MyGameRecordList__C-item" index="${index}" onclick="openGameBetDetails(${index})">
             <div data-v-2faec5cb="" class="MyGameRecordList__C-item-l MyGameRecordList__C-item-${color}" >${checkJoin}</div>

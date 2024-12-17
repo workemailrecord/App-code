@@ -2979,6 +2979,12 @@
             colorNameStyle = backgroundImage; // Apply gradient to color name span
         }
 
+        // Determine the color for profitLoss
+        const profitLossColor = game.profitLoss > 1 ? 'green' : 'red';
+
+        // Check if the result is pending
+        const isPending = game.status === 'Pending';
+
         const gameDiv = `
             <div data-v-1d8fbc24="" class="bet-container-lottery-card">
                 <div data-v-1d8fbc24="" class="bet-container-lottery-card-header ar-1px-b">
@@ -2986,7 +2992,7 @@
                         <h2 data-v-1d8fbc24="">${game.name || 'Game Name'}</h2>
                         <span data-v-1d8fbc24="" class="color40C592">${game.dateTime}</span>
                     </h1>
-                    <span class="status ${game.status === 'Win' ? 'color40C592' : 'colorE98613'}">${game.status}</span>
+                    <span class="status ${game.status === 'Win' ? 'color40C592' : game.status === 'Lose' ? 'colorE98613' : 'colorPending'}">${game.status || 'Pending'}</span>
                 </div>
                 <div data-v-1d8fbc24="" class="bet-container-lottery-card-info">
                     <ul data-v-1d8fbc24="">
@@ -3051,9 +3057,9 @@
                                 <svg data-v-1d8fbc24="" class="svg-icon icon-round">
                                     <use xlink:href="#icon-round"></use>
                                 </svg>
-                                <p data-v-1d8fbc24="" class="${resultColorClass}" style="${backgroundImage}">${game.lotteryResult}</p>
-                                <span data-v-1d8fbc24="" class="small" style="background-color: ${backgroundColor};">${sizeDisplay}</span>
-                                <span data-v-1d8fbc24="" class="${resultColorClass}" style="${colorNameStyle}">${colorName}</span>
+                                <p data-v-1d8fbc24="" class="${resultColorClass}" style="${backgroundImage}">${isPending ? '' : game.lotteryResult}</p>
+                                <span data-v-1d8fbc24="" class="small" style="background-color: ${isPending ? 'grey' : backgroundColor};">${isPending ? 'Pending' : sizeDisplay}</span>
+                                <span data-v-1d8fbc24="" class="${resultColorClass}" style="${colorNameStyle}">${isPending ? 'Pending' : colorName}</span>
                             </h2>
                         </div>
                     </div>
@@ -3078,7 +3084,7 @@
                         </div>
                         <div data-v-1d8fbc24="">
                             <div data-v-1d8fbc24="" class="bet-container-lottery-note-box-para">
-                                <h4 data-v-1d8fbc24="" class="h4_green">${game.profitLoss}</h4>
+                                <h4 data-v-1d8fbc24="" style="color: ${isPending ? 'gray' : profitLossColor};">${isPending ? 'Pending' : game.profitLoss.toFixed(2)}</h4>
                                 <span data-v-1d8fbc24="">Profit/loss</span>
                             </div>
                         </div>
@@ -3089,7 +3095,6 @@
         container.innerHTML += gameDiv; // Append the new game entry
     });
 };
-
 // Fetch game history on page load
 window.onload = fetchGameHistory;
 </script>

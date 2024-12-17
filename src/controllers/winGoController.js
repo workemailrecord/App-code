@@ -67,7 +67,7 @@ const getGameHistory = async (req, res) => {
 
     const [gameHistory] = await connection.query(
       `
-      SELECT id_product AS orderNumber, stage AS period, fee, money, amount, result AS lotteryResult, status, time, get
+      SELECT id_product AS orderNumber, stage AS period, fee, money, amount, result AS lotteryResult, status, time, get, bet
       FROM minutes_1
       WHERE phone = ? 
       ORDER BY time DESC
@@ -76,7 +76,8 @@ const getGameHistory = async (req, res) => {
     );
 
     const formattedHistory = gameHistory.map((list_order) => {
-      // Determine winning color and winning amount
+      // Determine if the result is pending
+      const isPending = list_order.status === 0; // Assuming status 0 means pending
       const isWin = list_order.status === 1;
       const profit = list_order.get - (list_order.fee + list_order.money); // Calculate profit
 
@@ -87,18 +88,18 @@ const getGameHistory = async (req, res) => {
       return {
         // Updated order of properties
         name: "Win Go", // Adjusted name based on win status
-        status: isWin ? 'Win' : 'Lose',
+        status: isPending ? 'Pending' : (isWin ? 'Win' : 'Lose'),
         dateTime: timerJoin(list_order.time),
         type: "Win Go 1 minute", // Adjusted type based on win status
         period: list_order.period,
         orderNumber: list_order.orderNumber,
-        selected: isWin ? "Green" : "Red", // Adjusted selected color based on win status
+        selected: list_order.bet, // Assign bet data to selected parameter
         totalBet: parseFloat(list_order.fee + list_order.money).toFixed(2),
-        lotteryResult: list_order.lotteryResult,
+        lotteryResult: isPending ? 'Pending' : list_order.lotteryResult,
         actualAmount: list_order.amount,
-        winning: profit > 0 ? list_order.get : 0, // Show winning only when profit, otherwise show 0
+        winning: isPending ? 0 : (profit > 0 ? list_order.get : 0), // Show winning only when profit, otherwise show 0
         handlingFee: fee,
-        profitLoss: profit, // Calculate profitLoss safely
+        profitLoss: isPending ? 0 : profit, // Calculate profitLoss safely
       };
     });
 
@@ -111,7 +112,6 @@ const getGameHistory = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
 const isNumber = (params) => {
   let pattern = /^[0-9]*\d$/;
   return pattern.test(params);
