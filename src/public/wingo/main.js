@@ -77,112 +77,85 @@ function sleep(ms) {
 
 function countDownTimer({ GAME_TYPE_ID }) {
   const getTimeMSS = (countDownDate) => {
-      const now = new Date().getTime();
-      const distance = countDownDate - now;
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      const seconds1 = Math.floor(seconds / 10);
-      const seconds2 = seconds % 10;
+    var now = new Date().getTime();
+    var distance = countDownDate - now;
+    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 30)); // Adjusted for 30-second intervals
+    var minute = Math.ceil(minutes % parseInt(GAME_TYPE_ID));
+    var seconds1 = Math.floor((distance % (1000 * 30)) / 10000); // Adjusted for 30-second intervals
+    var seconds2 = Math.floor(((distance % (1000 * 30)) / 1000) % 10); // Adjusted for 30-second intervals
 
-      return { seconds1, seconds2, distance };
+    return { minute, seconds1, seconds2 };
   };
 
-  // Check if there's a stored countdown start time
-  let storedStartTime = localStorage.getItem('countdownStartTime');
-  let countDownDate;
 
-  if (storedStartTime) {
-      // Use the stored start time to calculate the countdown date
-      countDownDate = parseInt(storedStartTime) + 30000; // 30 seconds from the stored start time
-  } else {
-      // Set a new countdown date and store the start time
-      countDownDate = new Date().getTime() + 30000; // 30 seconds from now
-      localStorage.setItem('countdownStartTime', new Date().getTime());
-  }
+  var countDownDate = new Date("2030-07-16T23:59:59.9999999+03:00").getTime();
 
-  const updateTimer = () => {
-      const { seconds1, seconds2, distance } = getTimeMSS(countDownDate);
+  countDownInterval1 = setInterval(function () {
+    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+    if (GAME_TYPE_ID !== "1") {
+      $(".TimeLeft__C-time div:eq(1)").text(minute);
+    } else {
+      $(".TimeLeft__C-time div:eq(1)").text("0");
+    }
 
-      if (distance <= 0) {
-          // Stop the countdown at 0
-          $(".TimeLeft__C-time div:eq(1)").text("0");
-          $(".TimeLeft__C-time div:eq(3)").text("0");
-          $(".TimeLeft__C-time div:eq(4)").text("0");
-
-          // Clear intervals and reset
-          clearInterval(countDownInterval1);
-          clearInterval(countDownInterval2);
-          clearInterval(countDownInterval3);
-          localStorage.removeItem('countdownStartTime'); // Clear stored time
-          countDownTimer({ GAME_TYPE_ID }); // Restart the timer
-          return;
-      }
-
-      $(".TimeLeft__C-time div:eq(1)").text("0"); // Always 0 for 30 seconds
-      $(".TimeLeft__C-time div:eq(3)").text(seconds1);
-      $(".TimeLeft__C-time div:eq(4)").text(seconds2);
-  };
-
-  countDownInterval1 = setInterval(updateTimer, 1000); // Update every second
+    $(".TimeLeft__C-time div:eq(3)").text(seconds1);
+    $(".TimeLeft__C-time div:eq(4)").text(seconds2);
+  }, 0);
 
   countDownInterval2 = setInterval(() => {
-      const { seconds1, seconds2, distance } = getTimeMSS(countDownDate);
-      const check_volume = localStorage.getItem("volume");
+    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
+    const check_volume = localStorage.getItem("volume");
 
-      if (distance <= 0) return; // Stop further actions if time is up
-
-      if (seconds1 == 0 && seconds2 <= 5) {
-          if (clicked) {
-              if (check_volume == "on") {
-                  playAudio1();
-              }
-          }
+    if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
+      if (clicked) {
+        if (check_volume == "on") {
+          playAudio1();
+        }
       }
-      if (seconds1 == 5 && seconds2 == 5) {
-          if (clicked) {
-              if (check_volume == "on") {
-                  playAudio2();
-              }
-          }
+    }
+    if (minute == 0 && seconds1 == 5 && seconds2 == 5) {
+      if (clicked) {
+        if (check_volume == "on") {
+          playAudio2();
+        }
       }
+    }
   }, 1000);
 
   countDownInterval3 = setInterval(function () {
-      const { seconds1, seconds2, distance } = getTimeMSS(countDownDate);
+    const { minute, seconds1, seconds2 } = getTimeMSS(countDownDate);
 
-      if (distance <= 0) return; // Stop further actions if time is up
+    if (minute == 0 && seconds1 == 0 && seconds2 <= 5) {
+      $(".van-overlay").fadeOut();
+      $(".popup-join").fadeOut();
 
-      if (seconds1 == 0 && seconds2 <= 5) {
-          $(".van-overlay").fadeOut();
-          $(".popup-join").fadeOut();
-
-          $(".Betting__C-mark").css("display", "flex");
-          $(".Betting__C-mark div:eq(0)").text(seconds1);
-          $(".Betting__C-mark div:eq(1)").text(seconds2);
-      } else {
-          $(".Betting__C-mark").css("display", "none");
-      }
-  }, 1000);
+      $(".Betting__C-mark").css("display", "flex");
+      $(".Betting__C-mark div:eq(0)").text(seconds1);
+      $(".Betting__C-mark div:eq(1)").text(seconds2);
+    } else {
+      $(".Betting__C-mark").css("display", "none");
+    }
+  }, 0);
 }
 
-// Call the function on document ready
 $(document).ready(function () {
   countDownTimer({ GAME_TYPE_ID });
 });
 
 const selectActiveClockByGameType = (GAME_TYPE_ID) => {
-    GAME_TYPE_ID = `${GAME_TYPE_ID}`;
-    GAME_NAME = GAME_TYPE_ID === "1" ? "wingo" : `wingo${GAME_TYPE_ID}`;
-    window.history.pushState({}, "", `/wingo/?game_type=${GAME_TYPE_ID}`);
-    initGameLogics({
-        GAME_TYPE_ID,
-        GAME_NAME,
-        My_Bets_Pages,
-        Game_History_Pages,
-    });
-    clearInterval(countDownInterval1);
-    clearInterval(countDownInterval2);
-    clearInterval(countDownInterval3);
-    countDownTimer({ GAME_TYPE_ID });
+  GAME_TYPE_ID = `${GAME_TYPE_ID}`;
+  GAME_NAME = GAME_TYPE_ID === "1" ? "wingo" : `wingo${GAME_TYPE_ID}`;
+  window.history.pushState({}, "", `/wingo/?game_type=${GAME_TYPE_ID}`);
+  initGameLogics({
+    GAME_TYPE_ID,
+    GAME_NAME,
+    My_Bets_Pages,
+    Game_History_Pages,
+  });
+  clearInterval(countDownInterval1);
+  clearInterval(countDownInterval2);
+  clearInterval(countDownInterval3);
+  countDownTimer({ GAME_TYPE_ID });
 };
 
 initGameLogics({ GAME_TYPE_ID, GAME_NAME, My_Bets_Pages, Game_History_Pages });
