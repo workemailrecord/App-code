@@ -10,8 +10,9 @@ import vipController from "./vipController.js";
 import gameController from "./gameController.js";
 
 const cronJobGame1p = (io) => {
-  cron.schedule("*/1 * * * *", async () => {
-    await trxWingoController.addTrxWingo(1);
+  // Change the schedule to every 30 seconds
+  cron.schedule("*/30 * * * * *", async () => { 
+    await trxWingoController.addTrxWingo(1); // Treat '1' as 30 seconds
     await trxWingoController.handlingTrxWingo1P(1);
     const [trxWingo] = await connection.execute(
       `SELECT * FROM trx_wingo_game WHERE game = '${TRX_WINGO_GAME_TYPE_MAP.MIN_1}' ORDER BY id DESC LIMIT 2`,

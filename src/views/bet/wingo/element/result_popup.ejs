@@ -1,4 +1,4 @@
-<div data-v-e44179e3="" data-v-5d71c3fd="" class="WinningTip__C" id="popup_modal" style="display: none;">
+<!-- <div data-v-e44179e3="" data-v-5d71c3fd="" class="WinningTip__C" id="popup_modal" style="display: none;">
    <div data-v-e44179e3="" class="WinningTip__C-body" id="popup_background">
       <div data-v-e44179e3="" class="WinningTip__C-body-l1" id="popup_greeting_display">Congratulations</div>
       <div data-v-e44179e3="" class="WinningTip__C-body-l2 type2" id="lottery_results_box">
@@ -25,4 +25,27 @@
    $(".closeBtn").click(function () {
       $(".WinningTip__C").hide()
    })
-</script>
+</script> -->
+<div class="WinningTip__C" style="display: none;" id="winningPopup">
+   <div class="WinningTip__C-body">
+     <div class="WinningTip__C-body-l1">Congratulations</div>
+     <div class="WinningTip__C-body-l2 typeundefined">Lottery results <div></div>
+       <div class="WinningNum"></div>
+       <div>Small</div>
+     </div>
+     <div class="WinningTip__C-body-l3">
+       <div class="head">Bonus</div>
+       <div class="bonus"></div>
+       <div class="gameDetail">Period: </div>
+     </div>
+     <div class="WinningTip__C-body-l4">
+       <div class="acitveBtn"></div> 3 seconds auto close
+     </div>
+     <div class="closeBtn"></div>
+   </div>
+ </div>
+ <script>
+   setTimeout(() => {
+     document.getElementById('winningPopup').style.display = 'block';
+   }, 30000); // Show popup after 30 seconds
+ </script>
